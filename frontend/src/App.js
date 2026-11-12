@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Header from './components/Header';
 import MapSelector from './components/MapSelector';
 import RouteResults from './components/RouteResults';
 import FincaForm from './components/FincaForm';
 import PlantaForm from './components/PlantaForm';
 import { listarFincas, listarPlantas, evaluarRutas, evaluarRutasPorIds } from './api/api';
-import { obtenerRutaPorCriterio } from './utils/criterios';
+import { indexarRutasPorCriterio } from './utils/criterios';
 
 const TABS = {
   EVALUAR: 'evaluar',
@@ -29,6 +29,8 @@ export default function App() {
   const [error, setError] = useState(null);
   const [rutaSeleccionadaId, setRutaSeleccionadaId] = useState(null);
   const [criterioActivo, setCriterioActivo] = useState('ecologico');
+
+  const rutasPorCriterio = useMemo(() => indexarRutasPorCriterio(resultado), [resultado]);
 
   useEffect(() => {
     cargarListas();
@@ -58,13 +60,10 @@ export default function App() {
   };
 
   const handleSeleccionarCriterio = (criterioKey) => {
-    if (!resultado) return;
-    if (criterioKey === 'ecologico') {
-      setRutaSeleccionadaId(resultado.rutaRecomendada.id);
-    } else {
-      const ganadora = obtenerRutaPorCriterio(resultado.rutasEvaluadas, criterioKey);
-      if (ganadora) setRutaSeleccionadaId(ganadora.id);
-    }
+    const ganadora = rutasPorCriterio.get(criterioKey);
+    if (!ganadora) return;
+
+    setRutaSeleccionadaId(ganadora.id);
     setCriterioActivo(criterioKey);
   };
 

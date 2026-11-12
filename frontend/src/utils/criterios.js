@@ -24,3 +24,26 @@ export function obtenerRutaPorCriterio(rutasEvaluadas, criterioKey) {
     actual[criterio.campo] < mejor[criterio.campo] ? actual : mejor
   );
 }
+
+const CRITERIOS_INDIVIDUALES = CRITERIOS.filter(({ key }) => key !== 'ecologico');
+
+/** Guarda la ruta ganadora de cada criterio para una evaluación. */
+export function indexarRutasPorCriterio(resultado) {
+  const indice = new Map();
+  if (!resultado) return indice;
+
+  if (resultado.rutaRecomendada) {
+    indice.set('ecologico', resultado.rutaRecomendada);
+  }
+
+  for (const ruta of resultado.rutasEvaluadas ?? []) {
+    for (const { key, campo } of CRITERIOS_INDIVIDUALES) {
+      const ganadora = indice.get(key);
+      if (!ganadora || ruta[campo] < ganadora[campo]) {
+        indice.set(key, ruta);
+      }
+    }
+  }
+
+  return indice;
+}
