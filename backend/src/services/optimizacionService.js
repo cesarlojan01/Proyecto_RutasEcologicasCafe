@@ -4,6 +4,13 @@ const { obtenerClimaPromedioRuta } = require('./weatherService');
 const { evaluarEstadoCarretera } = require('./roadConditionService');
 const { calcularEmisionesCO2 } = require('../utils/co2Calculator');
 const { calcularRiesgoDeterioro } = require('../utils/deteriorationRisk');
+const { ordenarConMetricas, registrarMetricas } = require('../utils/ordenamiento');
+
+/**
+ * Criterios para ordenar las rutas evaluadas: menor puntaje ecológico y, si hay
+ * empate, menor riesgo de deterioro y luego menor distancia.
+ */
+const CRITERIOS_RECOMENDACION = 'puntajeEcologico:asc,riesgoDeterioro:asc,distanciaKm:asc';
 
 /**
  * Pesos usados para combinar los factores normalizados en el "puntaje ecológico".
@@ -47,12 +54,14 @@ async function evaluarRutas(origen, destino) {
     return { ...ruta, puntajeEcologico: Number((puntajeEcologico * 100).toFixed(2)) };
   });
 
-  // Ordenar de menor a mayor puntaje (menor puntaje = más ecológico/recomendable)
-  rutasConPuntaje.sort((a, b) => a.puntajeEcologico - b.puntajeEcologico);
+  // Ordenar con MergeSort multicriterio (implementación propia, ver utils/ordenamiento.js).
+  // Menor puntaje = más ecológico/recomendable.
+  const { datos: rutasOrdenadas, metricas } = ordenarConMetricas('merge', rutasConPuntaje, CRITERIOS_RECOMENDACION);
+  registrarMetricas('evaluacion de rutas', metricas);
 
   return {
-    rutasEvaluadas: rutasConPuntaje,
-    rutaRecomendada: rutasConPuntaje[0],
+    rutasEvaluadas: rutasOrdenadas,
+    rutaRecomendada: rutasOrdenadas[0],
   };
 }
 

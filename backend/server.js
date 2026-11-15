@@ -6,6 +6,7 @@ const connectDB = require('./src/config/db');
 const fincasRoutes = require('./src/routes/fincas.routes');
 const plantasRoutes = require('./src/routes/plantas.routes');
 const rutasRoutes = require('./src/routes/rutas.routes');
+const ordenamientoRoutes = require('./src/routes/ordenamiento.routes');
 
 const app = express();
 
@@ -21,6 +22,7 @@ connectDB();
 app.use('/api/fincas', fincasRoutes);
 app.use('/api/plantas', plantasRoutes);
 app.use('/api/rutas', rutasRoutes);
+app.use('/api/ordenamiento', ordenamientoRoutes);
 
 // Endpoint de salud
 app.get('/api/health', (req, res) => {
