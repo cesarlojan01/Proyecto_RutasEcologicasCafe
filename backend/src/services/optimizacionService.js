@@ -4,6 +4,7 @@ const { obtenerClimaPromedioRuta } = require('./weatherService');
 const { evaluarEstadoCarretera } = require('./roadConditionService');
 const { calcularEmisionesCO2 } = require('../utils/co2Calculator');
 const { calcularRiesgoDeterioro } = require('../utils/deteriorationRisk');
+const { calcularRiesgoDeterioroBanano } = require('../utils/bananaDeteriorationRisk');
 const { ordenarConMetricas, registrarMetricas } = require('../utils/ordenamiento');
 
 /**
@@ -31,12 +32,12 @@ const PESOS = {
  * indicadores (clima, altitud, CO2, riesgo de deterioro, estado de la vía)
  * y determina cuál es la más ecológica.
  */
-async function evaluarRutas(origen, destino) {
+async function evaluarRutas(origen, destino, producto = 'cafe') {
   const rutas = await obtenerRutasAlternativas(origen, destino);
 
   const rutasEvaluadas = await Promise.all(
-    rutas.map((ruta) => evaluarRutaIndividual(ruta))
-  );
+    rutas.map((ruta) => evaluarRutaIndividual(ruta, producto))
+);
 
   // Normalización min-max de cada indicador para poder combinarlos en un solo puntaje
   const normalizados = normalizarIndicadores(rutasEvaluadas);
@@ -66,7 +67,7 @@ async function evaluarRutas(origen, destino) {
 }
 
 /** Evalúa una sola ruta: clima, altitud, estado de vía, CO2 y riesgo de deterioro */
-async function evaluarRutaIndividual(ruta) {
+async function evaluarRutaIndividual(ruta, producto) {
   const [clima, altitudes] = await Promise.all([
     obtenerClimaPromedioRuta(ruta.puntosMuestra),
     obtenerAltitudes(ruta.puntosMuestra),
@@ -83,7 +84,17 @@ async function evaluarRutaIndividual(ruta) {
     factorRiesgoCarretera,
   });
 
-  const riesgoDeterioro = calcularRiesgoDeterioro({
+  let riesgoDeterioro;
+
+  if (producto === 'banano') {
+    riesgoDeterioro = calcularRiesgoDeterioroBanano({
+      duracionMin: ruta.duracionMin,
+      temperatura: clima.temperatura,
+      humedad: clima.humedad,
+      factorRiesgoCarretera,
+    });
+} else {
+  riesgoDeterioro = calcularRiesgoDeterioro({
     duracionMin: ruta.duracionMin,
     temperatura: clima.temperatura,
     humedad: clima.humedad,
@@ -91,6 +102,7 @@ async function evaluarRutaIndividual(ruta) {
     factorRiesgoCarretera,
     variacionAltitud,
   });
+}
 
   return {
     id: ruta.id,

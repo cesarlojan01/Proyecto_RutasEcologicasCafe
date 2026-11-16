@@ -23,6 +23,7 @@ export default function App() {
   const [plantas, setPlantas] = useState([]);
   const [fincaSeleccionada, setFincaSeleccionada] = useState('');
   const [plantaSeleccionada, setPlantaSeleccionada] = useState('');
+  const [productoSeleccionado, setProductoSeleccionado] = useState('cafe');
 
   const [resultado, setResultado] = useState(null);
   const [cargando, setCargando] = useState(false);
@@ -77,7 +78,7 @@ export default function App() {
     setCargando(true);
     setResultado(null);
     try {
-      const data = await evaluarRutas(origen, destino);
+      const data = await evaluarRutas(origen, destino, null, null, productoSeleccionado);
       setResultado(data);
       setRutaSeleccionadaId(data?.rutaRecomendada?.id ?? null);
       setCriterioActivo('ecologico');
@@ -97,7 +98,11 @@ export default function App() {
     setCargando(true);
     setResultado(null);
     try {
-      const data = await evaluarRutasPorIds(fincaSeleccionada, plantaSeleccionada);
+      const data = await evaluarRutasPorIds(
+        fincaSeleccionada,
+        plantaSeleccionada,
+        productoSeleccionado
+      );
       setResultado(data);
       setRutaSeleccionadaId(data?.rutaRecomendada?.id ?? null);
       setCriterioActivo('ecologico');
@@ -135,6 +140,18 @@ export default function App() {
 
       {tabActiva === TABS.EVALUAR && (
         <>
+        <div className="card">
+          <h2>Producto que se transportará</h2>
+
+          <select
+            value={productoSeleccionado}
+            onChange={(e) => setProductoSeleccionado(e.target.value)}
+          >
+            <option value="cafe">Pulpa de café</option>
+            <option value="banano">Banano</option>
+          </select>
+        </div>
+        
           <div className="card">
             <h2>Opción 1: Seleccionar en el mapa</h2>
             <MapSelector
