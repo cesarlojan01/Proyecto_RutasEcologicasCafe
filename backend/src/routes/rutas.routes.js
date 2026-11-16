@@ -17,7 +17,7 @@ const Planta = require('../models/Planta');
  */
 router.post('/evaluar', async (req, res, next) => {
   try {
-    const { origen, destino, fincaId, plantaId } = req.body;
+    const { origen, destino, fincaId, plantaId, producto = 'cafe' } = req.body;
 
     if (!origen?.lat || !origen?.lng || !destino?.lat || !destino?.lng) {
       return res.status(400).json({
@@ -26,13 +26,14 @@ router.post('/evaluar', async (req, res, next) => {
       });
     }
 
-    const resultado = await evaluarRutas(origen, destino);
+    const resultado = await evaluarRutas(origen, destino, producto);
 
     // Guardar histórico si la base de datos está disponible
     try {
       await RutaHistorial.create({
         finca: fincaId || undefined,
         planta: plantaId || undefined,
+        producto,
         origen,
         destino,
         rutasEvaluadas: resultado.rutasEvaluadas.map((r) => ({
@@ -68,7 +69,7 @@ router.post('/evaluar', async (req, res, next) => {
  */
 router.post('/evaluar-por-ids', async (req, res, next) => {
   try {
-    const { fincaId, plantaId } = req.body;
+    const { fincaId, plantaId, producto = 'cafe' } = req.body;
     if (!fincaId || !plantaId) {
       return res.status(400).json({ error: true, mensaje: 'fincaId y plantaId son obligatorios' });
     }
@@ -81,11 +82,16 @@ router.post('/evaluar-por-ids', async (req, res, next) => {
     if (!finca) return res.status(404).json({ error: true, mensaje: 'Finca no encontrada' });
     if (!planta) return res.status(404).json({ error: true, mensaje: 'Planta no encontrada' });
 
-    const resultado = await evaluarRutas(finca.ubicacion, planta.ubicacion);
+    const resultado = await evaluarRutas(
+      finca.ubicacion,
+      planta.ubicacion,
+      producto
+);
 
     await RutaHistorial.create({
       finca: finca._id,
       planta: planta._id,
+      producto,
       origen: finca.ubicacion,
       destino: planta.ubicacion,
       rutasEvaluadas: resultado.rutasEvaluadas,

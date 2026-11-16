@@ -4,6 +4,11 @@ const RutaHistorialSchema = new mongoose.Schema(
   {
     finca: { type: mongoose.Schema.Types.ObjectId, ref: 'Finca' },
     planta: { type: mongoose.Schema.Types.ObjectId, ref: 'Planta' },
+    producto: {
+      type: String,
+      enum: ['cafe', 'banano'],
+      default: 'cafe',
+    },
     origen: {
       lat: Number,
       lng: Number,

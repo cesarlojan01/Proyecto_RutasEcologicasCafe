@@ -18,11 +18,21 @@ export const crearPlanta = (planta) => api.post('/plantas', planta).then((r) => 
 export const eliminarPlanta = (id) => api.delete(`/plantas/${id}`).then((r) => r.data);
 
 // Evaluación de rutas
-export const evaluarRutas = (origen, destino, fincaId, plantaId) =>
-  api.post('/rutas/evaluar', { origen, destino, fincaId, plantaId }).then((r) => r.data);
+export const evaluarRutas = (origen, destino, fincaId, plantaId, producto = 'cafe') =>
+  api.post('/rutas/evaluar', {
+    origen,
+    destino,
+    fincaId,
+    plantaId,
+    producto,
+  }).then((r) => r.data);
 
-export const evaluarRutasPorIds = (fincaId, plantaId) =>
-  api.post('/rutas/evaluar-por-ids', { fincaId, plantaId }).then((r) => r.data);
+export const evaluarRutasPorIds = (fincaId, plantaId, producto = 'cafe') =>
+  api.post('/rutas/evaluar-por-ids', {
+    fincaId,
+    plantaId,
+    producto,
+  }).then((r) => r.data);
 
 export const obtenerHistorial = () => api.get('/rutas/historial').then((r) => r.data);
 
