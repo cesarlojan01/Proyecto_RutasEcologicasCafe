@@ -19,7 +19,7 @@ export const eliminarPlanta = (id) => api.delete(`/plantas/${id}`).then((r) => r
 
 // Evaluación de rutas
 export const evaluarRutas = (origen, destino, fincaId, plantaId, producto = 'cafe') =>
-  api.post('/rutas/evaluar', {
+  api.post('/dijkstra/evaluar', {
     origen,
     destino,
     fincaId,
@@ -28,7 +28,7 @@ export const evaluarRutas = (origen, destino, fincaId, plantaId, producto = 'caf
   }).then((r) => r.data);
 
 export const evaluarRutasPorIds = (fincaId, plantaId, producto = 'cafe') =>
-  api.post('/rutas/evaluar-por-ids', {
+  api.post('/dijkstra/evaluar-por-ids', {
     fincaId,
     plantaId,
     producto,
