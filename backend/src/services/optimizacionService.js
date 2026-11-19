@@ -34,7 +34,14 @@ const PESOS = {
  */
 async function evaluarRutas(origen, destino, producto = 'cafe') {
   const rutas = await obtenerRutasAlternativas(origen, destino);
+  return evaluarListaDeRutas(rutas, producto);
+}
 
+/**
+ * Evalúa una lista de rutas ya obtenidas (de OSRM o calculadas con Dijkstra),
+ * les asigna el puntaje ecológico y las ordena con MergeSort.
+ */
+async function evaluarListaDeRutas(rutas, producto = 'cafe') {
   const rutasEvaluadas = await Promise.all(
     rutas.map((ruta) => evaluarRutaIndividual(ruta, producto))
 );
@@ -118,6 +125,7 @@ async function evaluarRutaIndividual(ruta, producto) {
     factorRiesgoCarretera,
     riesgoDeterioro,
     emisionesCO2Kg,
+    ...(ruta.esDijkstra ? { esDijkstra: true } : {}),
   };
 }
 
@@ -154,4 +162,4 @@ function promedio(lista) {
   return lista.reduce((a, b) => a + b, 0) / lista.length;
 }
 
-module.exports = { evaluarRutas, PESOS };
+module.exports = { evaluarRutas, evaluarListaDeRutas, PESOS };

@@ -13,19 +13,25 @@ const OSRM_BASE_URL = process.env.OSRM_BASE_URL || 'https://router.project-osrm.
  * Obtiene varias rutas alternativas entre un origen y un destino usando OSRM.
  * @param {{lat:number,lng:number}} origen
  * @param {{lat:number,lng:number}} destino
+ * @param {{conTramos?: boolean}} opciones  conTramos=true pide además a OSRM el detalle
+ *        de cada segmento (nodos de OpenStreetMap, distancia y duración), que usa Dijkstra
+ *        para armar el grafo de la red vial. Sin esta opción el resultado es el de siempre.
  * @returns {Promise<Array>} lista de rutas normalizadas
  */
-async function obtenerRutasAlternativas(origen, destino) {
+async function obtenerRutasAlternativas(origen, destino, opciones = {}) {
+  const { conTramos = false } = opciones;
   const coords = `${origen.lng},${origen.lat};${destino.lng},${destino.lat}`;
   const url = `${OSRM_BASE_URL}/route/v1/driving/${coords}`;
 
   try {
     const { data } = await axios.get(url, {
       params: {
-        alternatives: true,
+        // Con conTramos se piden hasta 3 alternativas: más rutas = más cruces para Dijkstra
+        alternatives: conTramos ? 3 : true,
         overview: 'full',
         geometries: 'polyline', // mismo formato de codificación que usa Google (precisión 5)
         steps: true,
+        ...(conTramos ? { annotations: 'nodes,distance,duration' } : {}),
       },
       timeout: 10000,
     });
@@ -46,12 +52,32 @@ async function obtenerRutasAlternativas(origen, destino) {
         puntosMuestra: extraerPuntosMuestra(coordenadas),
         // Nombres de vías reportados por OSM a lo largo de la ruta (para referencia)
         viasPrincipales: extraerNombresVias(route),
+        ...(conTramos ? { tramos: extraerTramos(route, coordenadas) } : {}),
       };
     });
   } catch (error) {
     console.error('Error consultando OSRM:', error.message);
     return simularRutas(origen, destino);
   }
+}
+
+/**
+ * Junta el detalle segmento a segmento de una ruta (solo cuando se pide conTramos).
+ * OSRM devuelve, por cada tramo (leg), los ids de los nodos de OpenStreetMap que recorre
+ * y la distancia (m) y duración (s) entre cada par de nodos consecutivos.
+ */
+function extraerTramos(route, coordenadas) {
+  const nodos = [];
+  const distancias = [];
+  const duraciones = [];
+  for (const leg of route.legs || []) {
+    const a = leg.annotation;
+    if (!a || !a.nodes) continue;
+    for (const n of a.nodes) nodos.push(String(n));
+    for (const d of a.distance || []) distancias.push(d);
+    for (const t of a.duration || []) duraciones.push(t);
+  }
+  return { coordenadas, nodos, distancias, duraciones };
 }
 
 /** Genera un nombre descriptivo de la ruta a partir de los nombres de calle más frecuentes */
@@ -158,4 +184,9 @@ function distanciaHaversineKm(a, b) {
   return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
 }
 
-module.exports = { obtenerRutasAlternativas, distanciaHaversineKm };
+module.exports = {
+  obtenerRutasAlternativas,
+  distanciaHaversineKm,
+  decodificarPolyline,
+  extraerPuntosMuestra,
+};
