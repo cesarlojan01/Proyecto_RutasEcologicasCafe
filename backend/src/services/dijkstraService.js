@@ -81,40 +81,33 @@ function costoSegmento(ind, referencias, criterio) {
  * Pasa la respuesta de OSRM a una lista de segmentos por ruta:
  * [{ desde, hasta, coordDesde, coordHasta, distanciaKm, duracionMin }].
  *
- * Si OSRM entregó los ids de nodos y coinciden con las coordenadas, se usan como
- * claves (son únicos en OpenStreetMap). Si no, se usa la coordenada redondeada y
- * la distancia se calcula con Haversine.
+ * Cada nodo se identifica por SU PROPIA coordenada (redondeada a 5 decimales, la
+ * precisión de la polyline). Así la posición de un nodo nunca se toma de otra ruta,
+ * y dos rutas que pasan por el mismo cruce comparten el nodo porque OSRM entrega la
+ * misma coordenada para ese punto.
+ *
+ * La distancia de cada segmento se calcula con Haversine sobre el trazado real. La
+ * duración se toma de OSRM si el detalle por segmento coincide con el trazado; si no,
+ * se reparte según la velocidad media de la ruta.
  */
 function segmentosDeRuta(ruta) {
-  const { coordenadas = [], nodos = [], distancias = [], duraciones = [] } = ruta.tramos || {};
-  const alineado =
-    nodos.length === coordenadas.length &&
-    distancias.length === coordenadas.length - 1 &&
-    duraciones.length === coordenadas.length - 1;
-
+  const { coordenadas = [], duraciones = [] } = ruta.tramos || {};
+  const duracionAlineada = duraciones.length === coordenadas.length - 1;
   const velocidadMedia = ruta.duracionMin > 0 ? ruta.distanciaKm / ruta.duracionMin : 0; // km/min
-  const clave = (i) =>
-    alineado ? `osm:${nodos[i]}` : `geo:${coordenadas[i].lat.toFixed(5)},${coordenadas[i].lng.toFixed(5)}`;
+  const clave = (p) => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`;
 
   const segmentos = [];
   for (let i = 0; i + 1 < coordenadas.length; i++) {
-    const desde = clave(i);
-    const hasta = clave(i + 1);
+    const a = coordenadas[i];
+    const b = coordenadas[i + 1];
+    const desde = clave(a);
+    const hasta = clave(b);
     if (desde === hasta) continue; // puntos repetidos
-    const distanciaKm = alineado
-      ? distancias[i] / 1000
-      : distanciaHaversineKm(coordenadas[i], coordenadas[i + 1]);
-    const duracionMin = alineado
+    const distanciaKm = distanciaHaversineKm(a, b);
+    const duracionMin = duracionAlineada
       ? duraciones[i] / 60
       : velocidadMedia > 0 ? distanciaKm / velocidadMedia : 0;
-    segmentos.push({
-      desde,
-      hasta,
-      coordDesde: coordenadas[i],
-      coordHasta: coordenadas[i + 1],
-      distanciaKm,
-      duracionMin,
-    });
+    segmentos.push({ desde, hasta, coordDesde: a, coordHasta: b, distanciaKm, duracionMin });
   }
   return segmentos;
 }
@@ -144,8 +137,8 @@ function calcularReferencias(segmentosPorRuta) {
 
 /**
  * Construye el grafo de la red vial a partir de las rutas de OSRM.
- * Las aristas se agregan en ambos sentidos (las vías son de doble sentido) y se
- * conectan dos nodos virtuales, ORIGEN y DESTINO, al inicio y al final de cada ruta.
+ * Cada tramo se agrega en el sentido de viaje y se conectan dos nodos virtuales,
+ * ORIGEN y DESTINO, al inicio y al final de cada ruta.
  */
 function construirGrafo(rutasOsrm, criterio = 'ecologico') {
   // Se mantiene un elemento por ruta (aunque esté vacío) para no perder el índice.
@@ -160,7 +153,9 @@ function construirGrafo(rutasOsrm, criterio = 'ecologico') {
       grafo.agregarNodo(s.hasta, s.coordHasta);
       const ind = indicadoresSegmento(s.distanciaKm, s.duracionMin);
       const peso = costoSegmento(ind, referencias, criterio);
-      grafo.agregarAristaDoble(s.desde, s.hasta, peso, {
+      // Solo en el sentido en que OSRM recorre el tramo: así se respetan las vías de un
+      // solo sentido. Las rutas que se cruzan siguen conectadas por el nodo compartido.
+      grafo.agregarArista(s.desde, s.hasta, peso, {
         distanciaKm: ind.distanciaKm,
         duracionMin: ind.duracionMin,
       });
@@ -174,6 +169,43 @@ function construirGrafo(rutasOsrm, criterio = 'ecologico') {
   }
 
   return { grafo, referencias, segmentosPorRuta };
+}
+
+/**
+ * Tolerancias para considerar que el camino de Dijkstra es "la misma ruta" que una de OSRM:
+ * al menos el 90 % de los nodos del camino están en esa ruta y la distancia difiere
+ * menos del 5 %.
+ */
+const SIMILITUD_MINIMA_NODOS = 0.9;
+const DIFERENCIA_MAXIMA_DISTANCIA = 0.05;
+
+/** Devuelve el índice de la ruta de OSRM equivalente al camino, o -1 si no hay ninguna. */
+function buscarRutaEquivalente(caminoReal, distanciaKm, segmentosPorRuta) {
+  let mejorIndice = -1;
+  let mejorSimilitud = 0;
+  for (let i = 0; i < segmentosPorRuta.length; i++) {
+    const segs = segmentosPorRuta[i];
+    if (segs.length === 0) continue;
+
+    const nodosRuta = new Set([segs[0].desde]);
+    let distanciaRuta = 0;
+    for (const s of segs) {
+      nodosRuta.add(s.hasta);
+      distanciaRuta += s.distanciaKm;
+    }
+
+    let compartidos = 0;
+    for (const id of caminoReal) if (nodosRuta.has(id)) compartidos++;
+    // Fracción del camino de Dijkstra que pasa por nodos de esta ruta.
+    const similitud = caminoReal.length > 0 ? compartidos / caminoReal.length : 0;
+    const diferencia = distanciaRuta > 0 ? Math.abs(distanciaKm - distanciaRuta) / distanciaRuta : 1;
+
+    if (similitud >= SIMILITUD_MINIMA_NODOS && diferencia <= DIFERENCIA_MAXIMA_DISTANCIA && similitud > mejorSimilitud) {
+      mejorSimilitud = similitud;
+      mejorIndice = i;
+    }
+  }
+  return mejorIndice;
 }
 
 /** Codifica una lista de puntos en polyline (precisión 5), el formato que dibuja el frontend. */
@@ -243,14 +275,9 @@ async function calcularRutaDijkstra(origen, destino, opciones = {}) {
     metricas: resultado.metricas,
   };
 
-  // Si el camino coincide con una ruta de OSRM, se marca esa ruta en vez de duplicarla.
-  const firmaCamino = caminoReal.join('>');
-  const indiceIgual = segmentosPorRuta.findIndex((segs) => {
-    if (segs.length === 0) return false;
-    const ids = [segs[0].desde];
-    for (const s of segs) ids.push(s.hasta);
-    return ids.join('>') === firmaCamino;
-  });
+  // Si el camino es prácticamente igual a una ruta de OSRM, se marca esa ruta en vez de
+  // agregar una copia casi idéntica (por ejemplo, cuando solo se diferencia en un retorno).
+  const indiceIgual = buscarRutaEquivalente(caminoReal, distanciaKm, segmentosPorRuta);
 
   if (indiceIgual >= 0) {
     const idIgual = conTramos[indiceIgual].id;

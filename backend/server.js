@@ -7,6 +7,7 @@ const fincasRoutes = require('./src/routes/fincas.routes');
 const plantasRoutes = require('./src/routes/plantas.routes');
 const rutasRoutes = require('./src/routes/rutas.routes');
 const ordenamientoRoutes = require('./src/routes/ordenamiento.routes');
+const dijkstraRoutes = require('./src/routes/dijkstra.routes');
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use('/api/fincas', fincasRoutes);
 app.use('/api/plantas', plantasRoutes);
 app.use('/api/rutas', rutasRoutes);
 app.use('/api/ordenamiento', ordenamientoRoutes);
+app.use('/api/dijkstra', dijkstraRoutes);
 
 // Endpoint de salud
 app.get('/api/health', (req, res) => {
