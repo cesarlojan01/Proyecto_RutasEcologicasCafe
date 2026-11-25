@@ -4,6 +4,8 @@ const { obtenerClimaPromedioRuta } = require('./weatherService');
 const { evaluarEstadoCarretera } = require('./roadConditionService');
 const { calcularEmisionesCO2 } = require('../utils/co2Calculator');
 const { calcularRiesgoDeterioro } = require('../utils/deteriorationRisk');
+const { mergeSort, crearComparador } = require('../utils/ordenamiento');
+const { MinHeap } = require('../utils/heap');
 
 /**
  * Pesos usados para combinar los factores normalizados en el "puntaje ecológico".
@@ -20,15 +22,30 @@ const PESOS = {
 };
 
 /**
+ * Criterio de ordenamiento del ranking ecológico (multicriterio).
+ * Se usa tanto en MergeSort (lista completa) como en MinHeap.topK (Top-3).
+ */
+const CRITERIOS_RANKING = 'puntajeEcologico:asc,riesgoDeterioro:asc,distanciaKm:asc';
+
+/**
  * Evalúa todas las rutas alternativas entre origen y destino, calcula sus
  * indicadores (clima, altitud, CO2, riesgo de deterioro, estado de la vía)
  * y determina cuál es la más ecológica.
+ *
+ * @param {{lat:number,lng:number}} origen
+ * @param {{lat:number,lng:number}} destino
+ * @param {Object} perfilProducto  Perfil del producto (ver data/productos/cafe.js).
+ *                                 OBLIGATORIO: el controller debe inyectarlo.
  */
-async function evaluarRutas(origen, destino) {
+async function evaluarRutas(origen, destino, perfilProducto) {
+  if (!perfilProducto) {
+    throw new Error('evaluarRutas: se requiere perfilProducto (ver productoService.cargarPerfil)');
+  }
+
   const rutas = await obtenerRutasAlternativas(origen, destino);
 
   const rutasEvaluadas = await Promise.all(
-    rutas.map((ruta) => evaluarRutaIndividual(ruta))
+    rutas.map((ruta) => evaluarRutaIndividual(ruta, perfilProducto))
   );
 
   // Normalización min-max de cada indicador para poder combinarlos en un solo puntaje
@@ -47,17 +64,37 @@ async function evaluarRutas(origen, destino) {
     return { ...ruta, puntajeEcologico: Number((puntajeEcologico * 100).toFixed(2)) };
   });
 
-  // Ordenar de menor a mayor puntaje (menor puntaje = más ecológico/recomendable)
-  rutasConPuntaje.sort((a, b) => a.puntajeEcologico - b.puntajeEcologico);
+  // MergeSort propio (estable) → preserva compatibilidad bit-a-bit con U1
+  // cuando dos rutas empatan en los tres criterios.
+  const compararCompleto = crearComparador(CRITERIOS_RANKING);
+  const rutasOrdenadas = mergeSort(rutasConPuntaje, compararCompleto);
+
+  // MinHeap.topK → obtiene las 3 mejores en O(n log 3) ≈ O(n),
+  // sin ordenar el arreglo completo. Se expone como `top3` para el frontend
+  // y como demostración del módulo de Heaps del Avance 3.
+  const top3 = MinHeap.topK(rutasConPuntaje, 3, compararCompleto);
 
   return {
-    rutasEvaluadas: rutasConPuntaje,
-    rutaRecomendada: rutasConPuntaje[0],
+    rutasEvaluadas: rutasOrdenadas,
+    rutaRecomendada: rutasOrdenadas[0],
+    top3,
+    // Snapshot del producto usado (para que el histórico sea interpretable aunque
+    // los perfiles cambien con el tiempo)
+    producto: {
+      slug: perfilProducto.slug,
+      nombre: perfilProducto.nombre,
+      version: perfilProducto.version ?? 1,
+    },
   };
 }
 
-/** Evalúa una sola ruta: clima, altitud, estado de vía, CO2 y riesgo de deterioro */
-async function evaluarRutaIndividual(ruta) {
+/**
+ * Evalúa una sola ruta: clima, altitud, estado de vía, CO2 y riesgo de deterioro.
+ *
+ * @param {Object} ruta
+ * @param {Object} perfilProducto
+ */
+async function evaluarRutaIndividual(ruta, perfilProducto) {
   const [clima, altitudes] = await Promise.all([
     obtenerClimaPromedioRuta(ruta.puntosMuestra),
     obtenerAltitudes(ruta.puntosMuestra),
@@ -69,19 +106,27 @@ async function evaluarRutaIndividual(ruta) {
   const { estado: estadoCarretera, factorRiesgo: factorRiesgoCarretera } =
     evaluarEstadoCarretera(ruta);
 
+  // Fix del bug de CO2: duracionMin y requiereRefrigeracion son obligatorios
+  // cuando el perfil exige refrigeración. Se pasan SIEMPRE los dos juntos.
   const emisionesCO2Kg = calcularEmisionesCO2({
     distanciaKm: ruta.distanciaKm,
     factorRiesgoCarretera,
+    duracionMin: ruta.duracionMin,
+    requiereRefrigeracion: perfilProducto.requiereRefrigeracion,
   });
 
-  const riesgoDeterioro = calcularRiesgoDeterioro({
-    duracionMin: ruta.duracionMin,
-    temperatura: clima.temperatura,
-    humedad: clima.humedad,
-    lluviaMm: clima.lluviaMm,
-    factorRiesgoCarretera,
-    variacionAltitud,
-  });
+  // U2: calcularRiesgoDeterioro exige el segundo argumento (perfil)
+  const riesgoDeterioro = calcularRiesgoDeterioro(
+    {
+      duracionMin: ruta.duracionMin,
+      temperatura: clima.temperatura,
+      humedad: clima.humedad,
+      lluviaMm: clima.lluviaMm,
+      factorRiesgoCarretera,
+      variacionAltitud,
+    },
+    perfilProducto
+  );
 
   return {
     id: ruta.id,
