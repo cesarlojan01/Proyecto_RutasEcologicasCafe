@@ -1,0 +1,84 @@
+{
+  "fecha": "2026-11-25T23:25:47.356Z",
+  "seed": 42,
+  "resultados": [
+    {
+      "n": 1000,
+      "secuencial": {
+        "tiempoPromedioMs": 0.0016032000000000153,
+        "comparacionesPromedio": 742.784
+      },
+      "binaria": {
+        "tiempoPromedioMs": 0.0006453999999999951,
+        "comparacionesPromedio": 9.436
+      },
+      "aceleracion": 2.48,
+      "ratioComp": 78.72
+    },
+    {
+      "n": 10000,
+      "secuencial": {
+        "tiempoPromedioMs": 0.012912800000000004,
+        "comparacionesPromedio": 7425.698
+      },
+      "binaria": {
+        "tiempoPromedioMs": 0.0005785999999999944,
+        "comparacionesPromedio": 13.15
+      },
+      "aceleracion": 22.32,
+      "ratioComp": 564.69
+    },
+    {
+      "n": 50000,
+      "secuencial": {
+        "tiempoPromedioMs": 0.06326280000000002,
+        "comparacionesPromedio": 37127.502
+      },
+      "binaria": {
+        "tiempoPromedioMs": 0.0005971999999999298,
+        "comparacionesPromedio": 15.378
+      },
+      "aceleracion": 105.93,
+      "ratioComp": 2414.33
+    },
+    {
+      "n": 100000,
+      "secuencial": {
+        "tiempoPromedioMs": 0.3534689999999998,
+        "comparacionesPromedio": 74254.766
+      },
+      "binaria": {
+        "tiempoPromedioMs": 0.00017219999999997526,
+        "comparacionesPromedio": 16.338
+      },
+      "aceleracion": 2052.67,
+      "ratioComp": 4544.91
+    },
+    {
+      "n": 250000,
+      "secuencial": {
+        "tiempoPromedioMs": 0.6971502,
+        "comparacionesPromedio": 185636.504
+      },
+      "binaria": {
+        "tiempoPromedioMs": 0.0002863999999999578,
+        "comparacionesPromedio": 17.448
+      },
+      "aceleracion": 2434.18,
+      "ratioComp": 10639.41
+    },
+    {
+      "n": 500000,
+      "secuencial": {
+        "tiempoPromedioMs": 1.6475915999999997,
+        "comparacionesPromedio": 371272.772
+      },
+      "binaria": {
+        "tiempoPromedioMs": 0.00030540000000110014,
+        "comparacionesPromedio": 18.51
+      },
+      "aceleracion": 5394.86,
+      "ratioComp": 20057.96
+    }
+  ]
+}

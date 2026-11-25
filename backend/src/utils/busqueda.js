@@ -1,14 +1,3 @@
-/**
- * Algoritmos de búsqueda instrumentados.
- *
- * - busquedaSecuencial: recorre la lista de principio a fin → O(n)
- * - busquedaBinaria: divide y vencerás sobre lista ORDENADA → O(log n)
- *
- * Ambos devuelven { indice, comparaciones }:
- *   indice         posición del elemento, o -1 si no existe
- *   comparaciones  cuántas veces se comparó una clave (para el informe)
- */
-
 function busquedaSecuencial(arreglo, objetivo, obtenerClave = (r) => r.id) {
   let comparaciones = 0;
   for (let i = 0; i < arreglo.length; i++) {
@@ -20,7 +9,21 @@ function busquedaSecuencial(arreglo, objetivo, obtenerClave = (r) => r.id) {
   return { indice: -1, comparaciones };
 }
 
-function busquedaBinaria(arreglo, objetivo, obtenerClave = (r) => r.id) {
+/**
+ * @param {Array}    arreglo       Lista ORDENADA por `comparar`.
+ * @param {*}        objetivo      Clave a buscar.
+ * @param {Function} obtenerClave  Cómo extraer la clave de cada elemento.
+ * @param {Function} comparar      Comparador (a, b) → negativo/0/positivo.
+ *                                 Default: orden numérico/lexicográfico JS.
+ *                                 Si los datos se ordenaron con Intl.Collator,
+ *                                 pasar ese mismo comparador.
+ */
+function busquedaBinaria(
+  arreglo,
+  objetivo,
+  obtenerClave = (r) => r.id,
+  comparar = (a, b) => (a < b ? -1 : a > b ? 1 : 0)
+) {
   let comparaciones = 0;
   let inicio = 0;
   let fin = arreglo.length - 1;
@@ -29,8 +32,9 @@ function busquedaBinaria(arreglo, objetivo, obtenerClave = (r) => r.id) {
     const medio = (inicio + fin) >>> 1;
     comparaciones++;
     const claveMedia = obtenerClave(arreglo[medio]);
-    if (claveMedia === objetivo) return { indice: medio, comparaciones };
-    if (claveMedia < objetivo) inicio = medio + 1;
+    const r = comparar(claveMedia, objetivo);
+    if (r === 0) return { indice: medio, comparaciones };
+    if (r < 0) inicio = medio + 1;
     else fin = medio - 1;
   }
   return { indice: -1, comparaciones };

@@ -1,0 +1,36 @@
+{
+  "fecha": "2026-11-25T23:25:39.660Z",
+  "seed": 42,
+  "resultados": [
+    {
+      "n": 1000,
+      "mergeSortMs": 0.1948,
+      "quickSortMs": 0.1654,
+      "nativeMs": 0.2622
+    },
+    {
+      "n": 5000,
+      "mergeSortMs": 1.3274,
+      "quickSortMs": 0.6046,
+      "nativeMs": 1.5805
+    },
+    {
+      "n": 10000,
+      "mergeSortMs": 2.0631,
+      "quickSortMs": 1.3599,
+      "nativeMs": 3.4032
+    },
+    {
+      "n": 50000,
+      "mergeSortMs": 11.8853,
+      "quickSortMs": 7.7933,
+      "nativeMs": 20.0428
+    },
+    {
+      "n": 500000,
+      "mergeSortMs": 139.5291,
+      "quickSortMs": 84.5505,
+      "nativeMs": 236.2648
+    }
+  ]
+}

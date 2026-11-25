@@ -1,26 +1,3 @@
-/**
- * MÓDULO DE ORDENAMIENTO MULTICRITERIO
- * ====================================
- * Implementación propia de dos algoritmos de ordenación O(n log n):
- *
- *  - MergeSort (ordenación por mezcla)
- *      · Divide el arreglo en mitades, ordena cada mitad y las mezcla.
- *      · Tiempo: O(n log n) en el mejor, promedio y peor caso.
- *      · Memoria extra: O(n) (arreglo auxiliar).
- *      · ESTABLE: dos registros "iguales" conservan su orden original.
- *
- *  - QuickSort (ordenación rápida)
- *      · Elige un pivote, separa menores a un lado y mayores al otro (partición)
- *        y repite en cada lado.
- *      · Tiempo: O(n log n) promedio; O(n²) en el peor caso (muy improbable con
- *        pivote "mediana de tres").
- *      · Memoria extra: O(log n) (pila de recursión) — ordena "en el sitio".
- *      · NO ESTABLE.
- *
- * Ambos reciben un comparador creado a partir de VARIOS criterios, p. ej.:
- *   [{ campo: 'riesgoDeterioro', orden: 'asc' }, { campo: 'emisionesCO2Kg', orden: 'asc' }]
- * → ordena por riesgo y, si hay empate, por CO2 (como ORDER BY en SQL).
- */
 const { performance } = require('perf_hooks');
 
 // ----------------------------------------------------------------------------
@@ -51,6 +28,10 @@ function parsearCriterios(texto) {
 }
 
 const colador = new Intl.Collator('es', { sensitivity: 'base', numeric: true });
+
+function esVacio(v) {
+  return v == null || Number.isNaN(v);
+}
 
 function compararValores(a, b) {
   // Camino rápido: dos números (el caso más común)
@@ -91,7 +72,7 @@ function crearComparador(criterios) {
       const vb = c.leer(b);
       let r = compararValores(va, vb);
       // "desc" invierte el orden, pero los vacíos siguen al final
-      if (r !== 0 && c.desc && va != null && vb != null) r = -r;
+      if (r !== 0 && c.desc && !esVacio(va) && !esVacio(vb)) r = -r;
       if (r !== 0) return r;
     }
     return 0;

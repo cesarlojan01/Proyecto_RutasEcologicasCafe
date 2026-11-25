@@ -1,22 +1,4 @@
-/**
- * API del módulo de ordenamiento (MergeSort / QuickSort sobre los datos de MongoDB).
- *
- *   GET /api/ordenamiento/campos
- *       Campos por los que se puede ordenar cada conjunto.
- *
- *   GET /api/ordenamiento/:conjunto?criterios=...&algoritmo=...&limite=...
- *       :conjunto  fincas | plantas | historial
- *       criterios  "campo:asc,campo2:desc"  (obligatorio; funciona como ORDER BY)
- *       algoritmo  merge | quick | comparar  (por defecto "comparar": ejecuta los dos)
- *       limite     cuántos registros ordenados devolver (por defecto 50)
- *
- *   Ejemplos:
- *   /api/ordenamiento/historial?criterios=riesgoDeterioro:asc,emisionesCO2Kg:asc
- *   /api/ordenamiento/fincas?criterios=produccionEstimadaKgDia:desc,nombre:asc&algoritmo=quick
- *
- *   La respuesta incluye, por algoritmo, el tiempo de ejecución en milisegundos
- *   y el número de comparaciones realizadas.
- */
+const mongoose = require('mongoose');
 const express = require('express');
 const { CAMPOS, ordenarRegistros } = require('../services/ordenamientoService');
 const { parsearCriterios } = require('../utils/ordenamiento');
@@ -48,7 +30,12 @@ router.get('/:conjunto', async (req, res) => {
       camposDisponibles: CAMPOS[conjunto],
     });
   }
-
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      error: true,
+      mensaje: 'MongoDB no disponible. No se pueden ordenar registros sin base de datos.',
+    });
+  }
   try {
     const { total, metricas, datos } = await ordenarRegistros(conjunto, criterios, algoritmo);
     res.json({ conjunto, criterios: metricas[0].criterios, total, metricas, datos: datos.slice(0, limite) });

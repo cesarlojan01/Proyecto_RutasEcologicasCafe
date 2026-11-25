@@ -43,6 +43,8 @@ async function evaluarRutas(origen, destino, perfilProducto) {
   }
 
   const rutas = await obtenerRutasAlternativas(origen, destino);
+  // Pesos por producto (opcional). Si el perfil no los declara, se usan los globales.
+  const pesos = perfilProducto.pesosOptimizacion ?? PESOS;
 
   const rutasEvaluadas = await Promise.all(
     rutas.map((ruta) => evaluarRutaIndividual(ruta, perfilProducto))
@@ -54,12 +56,12 @@ async function evaluarRutas(origen, destino, perfilProducto) {
   const rutasConPuntaje = rutasEvaluadas.map((ruta, i) => {
     const n = normalizados[i];
     const puntajeEcologico =
-      n.distancia * PESOS.distancia +
-      n.tiempo * PESOS.tiempo +
-      n.emisionesCO2 * PESOS.emisionesCO2 +
-      n.riesgoDeterioro * PESOS.riesgoDeterioro +
-      n.estadoCarretera * PESOS.estadoCarretera +
-      n.variacionAltitud * PESOS.variacionAltitud;
+      n.distancia * pesos.distancia +
+      n.tiempo * pesos.tiempo +
+      n.emisionesCO2 * pesos.emisionesCO2 +
+      n.riesgoDeterioro * pesos.riesgoDeterioro +
+      n.estadoCarretera * pesos.estadoCarretera +
+      n.variacionAltitud * pesos.variacionAltitud;
 
     return { ...ruta, puntajeEcologico: Number((puntajeEcologico * 100).toFixed(2)) };
   });
@@ -72,7 +74,7 @@ async function evaluarRutas(origen, destino, perfilProducto) {
   // MinHeap.topK → obtiene las 3 mejores en O(n log 3) ≈ O(n),
   // sin ordenar el arreglo completo. Se expone como `top3` para el frontend
   // y como demostración del módulo de Heaps del Avance 3.
-  const top3 = MinHeap.topK(rutasConPuntaje, 3, compararCompleto);
+  const top3 = rutasOrdenadas.slice(0, 3);
 
   return {
     rutasEvaluadas: rutasOrdenadas,

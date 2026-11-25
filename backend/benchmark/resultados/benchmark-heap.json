@@ -1,0 +1,80 @@
+{
+  "fecha": "2026-11-25T23:26:44.949Z",
+  "seed": 42,
+  "repeticiones": 7,
+  "criterios": "puntajeEcologico:asc,riesgoDeterioro:asc,distanciaKm:asc",
+  "resultados": [
+    {
+      "n": 1000,
+      "K": 1,
+      "tiempoSortMs": 1.1706,
+      "tiempoHeapMs": 0.3323,
+      "aceleracion": 3.52,
+      "equivalentes": true
+    },
+    {
+      "n": 1000,
+      "K": 3,
+      "tiempoSortMs": 0.8853,
+      "tiempoHeapMs": 0.3316,
+      "aceleracion": 2.67,
+      "equivalentes": true
+    },
+    {
+      "n": 1000,
+      "K": 10,
+      "tiempoSortMs": 0.8524,
+      "tiempoHeapMs": 0.2498,
+      "aceleracion": 3.41,
+      "equivalentes": true
+    },
+    {
+      "n": 50000,
+      "K": 1,
+      "tiempoSortMs": 117.6233,
+      "tiempoHeapMs": 4.6865,
+      "aceleracion": 25.1,
+      "equivalentes": true
+    },
+    {
+      "n": 50000,
+      "K": 3,
+      "tiempoSortMs": 106.5345,
+      "tiempoHeapMs": 5.4295,
+      "aceleracion": 19.62,
+      "equivalentes": true
+    },
+    {
+      "n": 50000,
+      "K": 10,
+      "tiempoSortMs": 121.8753,
+      "tiempoHeapMs": 5.2299,
+      "aceleracion": 23.3,
+      "equivalentes": true
+    },
+    {
+      "n": 500000,
+      "K": 1,
+      "tiempoSortMs": 1433.0679,
+      "tiempoHeapMs": 28.9412,
+      "aceleracion": 49.52,
+      "equivalentes": true
+    },
+    {
+      "n": 500000,
+      "K": 3,
+      "tiempoSortMs": 2011.6857,
+      "tiempoHeapMs": 45.7945,
+      "aceleracion": 43.93,
+      "equivalentes": true
+    },
+    {
+      "n": 500000,
+      "K": 10,
+      "tiempoSortMs": 2285.6982,
+      "tiempoHeapMs": 46.7507,
+      "aceleracion": 48.89,
+      "equivalentes": true
+    }
+  ]
+}

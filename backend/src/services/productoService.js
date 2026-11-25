@@ -1,3 +1,5 @@
+const { cargarCatalogo } = require('../data/productos');
+
 const SLUG_DEFAULT = 'cafe';
 
 // Un Map evita que slugs como "constructor" o "__proto__" resuelvan a propiedades de Object.prototype.

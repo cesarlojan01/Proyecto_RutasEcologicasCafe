@@ -16,7 +16,7 @@ function congelarProfundo(obj) {
 function cargarCatalogo(dir = __dirname) {
   const archivos = fs
     .readdirSync(dir)
-    .filter((f) => f.endsWith('.js') && f !== 'index.js' && !f.startsWith('_'))
+    .filter((f) => f.toLowerCase().endsWith('.js') && f.toLowerCase() !== 'index.js' && !f.startsWith('_'))
     .sort();
 
   const catalogo = new Map();

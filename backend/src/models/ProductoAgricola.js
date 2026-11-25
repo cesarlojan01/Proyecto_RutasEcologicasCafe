@@ -1,18 +1,19 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
+const FINITO = { validator: Number.isFinite, message: 'debe ser un número finito (rechaza Infinity y NaN)' };
 
 const BandaToleranciaSchema = new Schema(
   {
-    optimaMin: { type: Number },
-    optimaMax: { type: Number, required: true },
-    criticaMin: { type: Number },
-    criticaMax: { type: Number, required: true },
+    optimaMin: { type: Number, validate: FINITO },
+    optimaMax: { type: Number, required: true, validate: FINITO },
+    criticaMin: { type: Number, validate: FINITO },
+    criticaMax: { type: Number, required: true, validate: FINITO },
   },
   { _id: false }
 );
 
-//valida que la cota critica sea mayor que la optima
+// valida que la cota critica sea mayor que la optima
 BandaToleranciaSchema.path('criticaMax').validate(
   function (v) {
     return v > this.optimaMax;
@@ -35,7 +36,6 @@ BandaToleranciaSchema.path('criticaMin').validate(
   'criticaMin exige optimaMin y debe ser menor que optimaMin'
 );
 
-
 const pesoRequerido = { type: Number, required: true, min: 0, max: 1 };
 
 const PesosDeterioroSchema = new Schema(
@@ -54,7 +54,6 @@ PesosDeterioroSchema.path('tiempo').validate(function () {
   const suma = this.tiempo + this.temperatura + this.humedad + this.lluvia + this.carretera + this.altitud;
   return Math.abs(suma - 1) < 1e-6; // evita errores de punto flotante
 }, 'Los pesos de deterioro deben sumar 1.0');
-
 
 const PesosOptimizacionSchema = new Schema(
   {
@@ -76,7 +75,6 @@ PesosOptimizacionSchema.path('distancia').validate(function () {
 
 const ProductoAgricolaSchema = new Schema(
   {
-
     slug: {
       type: String,
       required: true,
@@ -89,20 +87,19 @@ const ProductoAgricolaSchema = new Schema(
     icono: { type: String, default: '🌱' },
     descripcion: { type: String, trim: true },
     activo: { type: Boolean, default: true },
-    version: { type: Number, default: 1, min: 1 }, // súbela al editar parámetros (trazabilidad)
+    version: { type: Number, default: 1, min: 1, validate: FINITO }, // súbela al editar parámetros (trazabilidad)
 
-    vidaUtilHoras: { type: Number, required: true, min: 0.1 },
+    vidaUtilHoras: { type: Number, required: true, min: 0.1, validate: FINITO },
 
+    densidadKgM3: { type: Number, required: true, min: 1, validate: FINITO },
 
-    densidadKgM3: { type: Number, required: true, min: 1 },
-
-    toleranciaFisica: { type: Number, required: true, min: 0, max: 0.95 },
+    toleranciaFisica: { type: Number, required: true, min: 0, max: 0.95, validate: FINITO },
 
     // ---- Tolerancias ambientales ----
     sensibilidadTermica: { type: BandaToleranciaSchema, required: true }, // °C
     sensibilidadHumedad: { type: BandaToleranciaSchema, required: true }, // % HR
-    lluviaCriticaMmH: { type: Number, required: true, min: 0.1 }, // mm/h con riesgo máximo
-    variacionAltitudCriticaM: { type: Number, required: true, min: 1 }, // m de desnivel con riesgo máximo
+    lluviaCriticaMmH: { type: Number, required: true, min: 0.1, validate: FINITO }, // mm/h con riesgo máximo
+    variacionAltitudCriticaM: { type: Number, required: true, min: 1, validate: FINITO }, // m de desnivel con riesgo máximo
 
     // ---- Pesos ----
     pesosDeterioro: { type: PesosDeterioroSchema, required: true },
