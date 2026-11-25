@@ -1,0 +1,10 @@
+Registros,Etapa,Algoritmo,Tiempo (ms),heapUsed (MB),Δ heapUsed (MB),Ordenado OK
+"1000","ANTES","Array.sort() nativo","0.318","15.04","0.32","sí"
+"1000","DESPUÉS","MergeSort (propio)","0.301","15.05","0.33","sí"
+"1000","DESPUÉS","QuickSort (propio)","0.509","15.43","0.71","sí"
+"5000","ANTES","Array.sort() nativo","2.001","16.99","2.21","sí"
+"5000","DESPUÉS","MergeSort (propio)","2.077","17.02","2.22","sí"
+"5000","DESPUÉS","QuickSort (propio)","3.033","19.2","4.41","sí"
+"10000","ANTES","Array.sort() nativo","4.613","19.87","4.99","sí"
+"10000","DESPUÉS","MergeSort (propio)","4.585","19.9","5.03","sí"
+"10000","DESPUÉS","QuickSort (propio)","6.803","16.44","1.56","sí"
